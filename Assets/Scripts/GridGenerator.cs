@@ -14,26 +14,37 @@ public class GridGenerator : MonoBehaviour
 
 
     public Square[,] GenerateGrid() {
+        //Provide a small X & Y offset to compensate for the centre of a square.
         float offsetX = (dimensionsX * gridSpacing) / 2;
         float offsetY = (dimensionsY * gridSpacing) / 2;
+        //Generate a set of random row skips to make sure the map is always navigable.
         List<int> xSkips = GenerateSkipRowIndexes(minRowSkips,maxRowSkips,dimensionsX,true);
         List<int> ySkips = GenerateSkipRowIndexes(minRowSkips,maxRowSkips,dimensionsY,true);
 
+        //Initialise the grid, with requred dimensions.
         Square[,] grid = new Square[dimensionsX, dimensionsY];
+        //Iterate over every single GridCoord.
         for(int x = 0; x < dimensionsX; x++) {
             for(int y = 0; y < dimensionsY; y++) {
+                //Pick a random weighted grid prefab.
                 GameObject chosenPrefab = PickRandomGridPrefab();
+                //Check if the current grid square is meant to be a skip. If it is, it's a blank square.
                 if(xSkips.Contains(x) || ySkips.Contains(y)) {
                     chosenPrefab = gridPrefabs[0].prefab;
                 }
+                //Spawn the grid block.
                 GameObject spawnedGrid = Instantiate(chosenPrefab);
+                //Move the grid block into the correct 3D position (in accordance with offsetting and spacing)
                 spawnedGrid.transform.position = new Vector3(x * gridSpacing - offsetX, 0, y*gridSpacing - offsetY);
+                //Assign the square object in the grid so we can use it later.
                 Square squareObj = spawnedGrid.GetComponent<Square>();
                 grid[x,y] = squareObj;
                 squareObj.coord = new GridCoord(x,y);
+                //Set the square material.
                 squareObj.squareMaterial = squareObj.GetComponentInChildren<MeshRenderer>().material;
             }
         }
+        //Return the newly-declared and filled grid.
         return grid;
     }
 

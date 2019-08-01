@@ -143,47 +143,34 @@ public class GameController : MonoBehaviour
 
 
     public IEnumerator CopTurn() {
+        //Notifies the UI Controller to update relevant banner information
         uiController.UpdateTurnUI(false);
+        //Iterates over the cop cars in the level
         for(int i = 0; i < copCars.Count; i++) {
-            
+            //Select the relevant cop car
             Car copCar = copCars[i];
+            //Highlight the squares that the cop can move
             HighlightAvailableSquares(copCar);
+            //Set the current camera target
             cameraController.currentTargetCar = copCar;
+            //Update banner information for this specific cop
             uiController.UpdateBanner("Cop " + copCar.carName + "'s turn");
+            //Declare a coordinate (clone) of the cops current coordinates
             GridCoord currentClone = copCar.gridCoord;
+            //Get a dice roll
             int diceRoll = GetDiceRoll();
+            //Update the move count on the banner information
             uiController.UpdateMoveCount(diceRoll);
+            //Wait for the camera to move to the cop cars position
             yield return new WaitForSeconds(0.8f);
+            //For every move on this dice roll
             for(int m = diceRoll; m > 0; m--) {
-                /*OLD AI
+                //Try 10 times to move
                 int remainingTries = 10;
-                bool found = false;
-                do {
-                    currentClone = copCar.gridCoord;
-                    int dir = Random.Range(0,4);
-                    switch(dir) {
-                        case 0:
-                        currentClone.x++;
-                        break;
-                        case 1:
-                        currentClone.x--;
-                        break;
-                        case 2:
-                        currentClone.y++;
-                        break;
-                        case 3:
-                        currentClone.y--;
-                        break;
-                    }
-                    if(currentClone.x < 0 || currentClone.y < 0 || currentClone.x >= gridGenerator.dimensionsX || currentClone.y >= gridGenerator.dimensionsY)
-                        continue;
-                    if(gridGenerator.GetSquare(currentClone).squareType == Square.SquareType.BUILDING)
-                        continue;
-                    found = true;
-                }while(--remainingTries > 0 && !found);
-                */
-                int remainingTries = 10;
+                //Declare a dictionary that will help us find the coordinate that reduces distance
+                //to the player the most.
                 Dictionary<float, GridCoord> distanceDict = new Dictionary<float, GridCoord>();
+                //(All below) Randomly move the coordinate by up to a unit in any direction
                 do {
                     currentClone = copCar.gridCoord;
                     int dir = Random.Range(0,4);
@@ -201,25 +188,34 @@ public class GameController : MonoBehaviour
                         currentClone.y--;
                         break;
                     }
+                    //Get the distance to the player if the cop car were to move here
                     float distance = GridCoord.Distance(currentClone, playerCar.gridCoord);
-                    
+                    //Check invalid grid positions
                     if(currentClone.x < 0 || currentClone.y < 0 || currentClone.x >= gridGenerator.dimensionsX || currentClone.y >= gridGenerator.dimensionsY)
                         continue;
+                    //Check if the grid is occupied by a building
                     if(gridGenerator.GetSquare(currentClone).squareType == Square.SquareType.BUILDING)
                         continue;
+                    //Insert the distance and coordinate into the dictionary
                     distanceDict[distance] = currentClone;
                     
                 }while(--remainingTries > 0);
+                //Find the smallest result
                 var result = distanceDict.OrderBy(x => x.Key);
                 GridCoord lowestDist = result.FirstOrDefault().Value;
+                //Check the dictionary result isn't empty
                 if(lowestDist!=null) {
+                    //Finally! Move to the square
                     MoveToSquare(copCar, gridGenerator.GetSquare(lowestDist));
                 }
+                //Update the move banner count
                 uiController.UpdateMoveCount(m);
+                //Wait for a quarter of a second to let the cop car to move to the position
                 yield return new WaitForSeconds(0.25f);
             }
             
         }
+        //Change to the players turn
         PlayerTurn();
     }
 
@@ -294,9 +290,12 @@ public class GameController : MonoBehaviour
     }
 
     public int MoveToSquare(Car car, Square square) {
+        //Checks if the car can move to the position
         if(!CanMoveTo(car, square,true))
             return 0;
+        //Notifies the formerly-occupied square of it's vacancy
         gridGenerator.GetSquare(car.gridCoord).occupiedCar = null;
+        //Notifies the new square of the new car
         square.occupiedCar = car;
         car.gridCoord = square.coord;
         //Start car animating
@@ -305,23 +304,35 @@ public class GameController : MonoBehaviour
 
         //Spawning cop car when player goes past station.
         if(car == playerCar) {
+            //Iterate over the adjacent squares
             foreach(Square s in GetAdjacentSquares(gridGenerator.GetSquare(car.gridCoord))) {
+                //If its a police building, spawn a new police car
                 if(s.squareType == Square.SquareType.POLICE_BUILDING) {
                     Car newCop = SpawnCop();
+                    //Pan camera over and let player know
                     StartCoroutine(NotifyNewCopCar(newCop));
                 }
             }
+            //Check if it's an ability item
             if(gridGenerator.GetSquare(playerCar.gridCoord).squareType == Square.SquareType.ABILITY_ITEM) {
+                //Get a reference to the powerup square
                 Square s = gridGenerator.GetSquare(playerCar.gridCoord);
+                //If the powerup is not used (Active)
                 if(s.transform.GetChild(1).gameObject.activeSelf) {
+                    //Start the handlepowerup Coroutine
                     StartCoroutine(HandlePowerup());
+                    //Mark the powerup as used (Inactive)
                     s.transform.GetChild(1).gameObject.SetActive(false);
+                    //Wait for the powerup animation to be complete before starting on the cop's turn
                     StartCoroutine(WaitForCopCompletion());
+                    //Notify the caller that the class had a powerup status
                     return 2;
                 }             
             }
         }
+        //Highlight new squares for the player.
         HighlightAvailableSquares(car);
+        //Movement was successful.
         return 1;
     }
 
