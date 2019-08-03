@@ -22,6 +22,12 @@ public class GameController : MonoBehaviour
     private List<Car> copCars;
     public int copsNumber;
 
+    [HideInInspector]
+    public int remaining3xMove = 0;
+
+    [HideInInspector]
+    public int remainingEscapeCards = 0;
+
     public string[] copNames;
 
 
@@ -35,11 +41,23 @@ public class GameController : MonoBehaviour
 
     public UIController uiController;
 
+    public int score = 0;
+
+    public int scoreMultiplier = 1;
+
     [Header("Aesthetics")]
     public Color highlightedSquareColor;
     public Color currentSquareColor;
     public Color baseSquareColor;
     public Color dangerColor;
+
+    public Color bankColor;
+
+    public List<Square> ActivatedBanks;
+
+    [Header("Score Parameters")]
+    public int scoreMoveAmount;
+    public int newCityAmount;
 
     public class AnimatingCar {
         public Car car;
@@ -103,7 +121,8 @@ public class GameController : MonoBehaviour
         GenerateCops();
         PlayerTurn();
         MoveToSquare(playerCar,gridGenerator.GetSquare(new GridCoord(0,0)));
-        
+        ActivatedBanks.Clear();
+
     }
 
     public List<Car> GetAllCars() {
@@ -139,6 +158,17 @@ public class GameController : MonoBehaviour
         } while (!found);
         copCars.Add(copCar);
         return copCar;
+    }
+
+    public void RobBank(Square s) {
+        if(s.squareType != Square.SquareType.BANK || ActivatedBanks.Contains(s))
+            return;
+        Animator bankAnimator = s.GetComponentInChildren<Animator>();
+        bankAnimator.SetTrigger("TriggerAlarm");
+        AddScoreMultiplier(1);
+        AddScore(10000);
+        ActivatedBanks.Add(s);
+        
     }
 
 
@@ -223,13 +253,36 @@ public class GameController : MonoBehaviour
         return Random.Range(1,7);
     }
 
+    public void ApplyPowerup(Powerup powerup) {
+        
+    }
+
     public void PlayerTurn() {
         if(CheckIfBusted()) {
-            SceneManager.LoadScene("MainMenu");
+            if(remainingEscapeCards > 0) {
+                //Randomly teleport player somewhere!
+                remainingEscapeCards--;
+                bool found = false;
+                do {
+                    GridCoord gridCoord = new GridCoord(Random.Range(0,2)*(gridGenerator.dimensionsX-1),Random.Range(0,2)*(gridGenerator.dimensionsY-1));
+                    if(gridGenerator.GetSquare(gridCoord).squareType == Square.SquareType.ROAD && CanMoveTo(playerCar, gridGenerator.GetSquare(gridCoord), true)) {
+                        MoveToSquare(playerCar, gridGenerator.GetSquare(gridCoord));
+                        found = true;
+                        continue;
+                    }
+                } while (!found);
+
+            } else {
+                uiController.DisplayGameOverScreen();
+            }
         }
         HighlightAvailableSquares(playerCar);
         playersTurn = true;
         remainingMoves = GetDiceRoll();
+        if(remaining3xMove > 0) {
+            remainingMoves *= 3;
+            remaining3xMove--;
+        }
         uiController.UpdateMoveCount(remainingMoves);
         cameraController.currentTargetCar = playerCar;
         uiController.UpdateTurnUI(true);
@@ -269,6 +322,7 @@ public class GameController : MonoBehaviour
         RectTransform rectTransform = prefabInst.GetComponent<RectTransform>();
         PowerupUI powerupUI = prefabInst.GetComponent<PowerupUI>();
         powerupUI.ApplyPowerup(pu);
+        pu.Activate(this);
         yield return new WaitForSeconds(4f);
         Destroy(prefabInst);
         
@@ -288,6 +342,25 @@ public class GameController : MonoBehaviour
         }
         
     }
+
+    public void AddScore(int amount) {
+        SetScore(score + (amount * scoreMultiplier));
+    }
+
+    public void SetScore(int amount) {
+        score = amount;
+        uiController.SetScoreText(score);
+    }
+
+    public void AddScoreMultiplier(int amount) {
+        SetScoreMultiplier(scoreMultiplier + amount);
+    }
+
+    public void SetScoreMultiplier(int amount) {
+        scoreMultiplier = amount;
+        uiController.SetScoreMultiplier(scoreMultiplier);
+    }
+    
 
     public int MoveToSquare(Car car, Square square) {
         //Checks if the car can move to the position
@@ -313,6 +386,8 @@ public class GameController : MonoBehaviour
                     StartCoroutine(NotifyNewCopCar(newCop));
                 }
             }
+            //Add Score
+            AddScore(scoreMoveAmount);
             //Check if it's an ability item
             if(gridGenerator.GetSquare(playerCar.gridCoord).squareType == Square.SquareType.ABILITY_ITEM) {
                 //Get a reference to the powerup square
@@ -363,15 +438,21 @@ public class GameController : MonoBehaviour
                 s.ResetSquareColor();
                 if(car == playerCar) {
                     if(s.occupiedCar != null && s.occupiedCar != playerCar && GridCoord.IsAdjacent(playerCar.gridCoord,s.occupiedCar.gridCoord))
+
                         s.SetSquareColor(dangerColor);
+                        
                 } else {
                     if(s.occupiedCar != null && s.occupiedCar == playerCar && GridCoord.IsAdjacent(car.gridCoord,s.occupiedCar.gridCoord))
                         s.SetSquareColor(dangerColor);
                 }
                 if(CanMoveTo(car, s)) {
                     s.SetSquareColor(highlightedSquareColor);
-                } else if(s = gridGenerator.GetSquare(car.gridCoord)) {
+                    
+                } else if(s == gridGenerator.GetSquare(car.gridCoord)) {
                     s.SetSquareColor(car.centreHighlightColor);
+                }
+                if(s.squareType == Square.SquareType.BANK && GridCoord.IsAdjacent(car.gridCoord,new GridCoord(x,y)) && car == playerCar && !ActivatedBanks.Contains(s)) {
+                    s.SetSquareColor(bankColor);
                 }
             }   
         }

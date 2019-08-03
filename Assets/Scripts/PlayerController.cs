@@ -30,6 +30,10 @@ public class PlayerController : MonoBehaviour
                         return;
                     if(s.squareType==Square.SquareType.BUILDING)
                         return;
+                    if(s.squareType==Square.SquareType.BANK) {
+                        gameController.RobBank(s);
+                        return;
+                    }
                     gameController.ClickOnSquare(s);
         }
            

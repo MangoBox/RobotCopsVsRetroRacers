@@ -121,7 +121,7 @@ RectTransform:
   m_LocalScale: {x: 0.029865673, y: 0.029865673, z: 0.029865673}
   m_Children: []
   m_Father: {fileID: 2490742568222255237}
-  m_RootOrder: 0
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -149,7 +149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.23740657, g: 0.9150943, b: 0.29142523, a: 1}
+  m_Color: {r: 0.23921569, g: 0.9137255, b: 0.2901961, a: 1}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -182,6 +182,7 @@ GameObject:
   - component: {fileID: 4358095699939164742}
   - component: {fileID: 5265863902154342966}
   - component: {fileID: 6912507740360809123}
+  - component: {fileID: 1755764304962942580}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -200,6 +201,7 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
+  - {fileID: 3125794701306157082}
   - {fileID: 4402272692588678066}
   - {fileID: 304471515292918843}
   - {fileID: 1428226293378833960}
@@ -272,6 +274,25 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!95 &1755764304962942580
+Animator:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4802381440254987805}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 6ded2ccc9b00aa24f84376a60a0a5f23, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorControllerStateOnDisable: 0
 --- !u!1 &6219297389897832002
 GameObject:
   m_ObjectHideFlags: 0
@@ -298,12 +319,12 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6219297389897832002}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 9.59, z: 0}
   m_LocalScale: {x: 5.859155, y: 1.717787, z: 5.859155}
   m_Children: []
-  m_Father: {fileID: 308029257736741826}
-  m_RootOrder: 3
+  m_Father: {fileID: 2490742568222255237}
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1248854764701809508
 MeshFilter:
@@ -393,7 +414,7 @@ RectTransform:
   m_LocalScale: {x: 0.029865673, y: 0.029865673, z: 0.029865673}
   m_Children: []
   m_Father: {fileID: 2490742568222255237}
-  m_RootOrder: 1
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: -90.00001, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -421,7 +442,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.23740657, g: 0.9150943, b: 0.29142523, a: 1}
+  m_Color: {r: 0.23921569, g: 0.9137255, b: 0.2901961, a: 1}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -472,7 +493,7 @@ RectTransform:
   m_LocalScale: {x: 0.029865673, y: 0.029865673, z: 0.029865673}
   m_Children: []
   m_Father: {fileID: 2490742568222255237}
-  m_RootOrder: 2
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: -180.00002, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -500,7 +521,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.23740657, g: 0.9150943, b: 0.29142523, a: 1}
+  m_Color: {r: 0.23921569, g: 0.9137255, b: 0.2901961, a: 1}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -551,7 +572,7 @@ RectTransform:
   m_LocalScale: {x: 0.029865673, y: 0.029865673, z: 0.029865673}
   m_Children: []
   m_Father: {fileID: 2490742568222255237}
-  m_RootOrder: 3
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: -269.999, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -579,7 +600,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.23740657, g: 0.9150943, b: 0.29142523, a: 1}
+  m_Color: {r: 0.23921569, g: 0.9137255, b: 0.2901961, a: 1}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:

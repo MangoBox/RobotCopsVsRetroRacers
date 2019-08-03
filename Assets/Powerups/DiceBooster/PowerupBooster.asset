@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: PowerupBooster
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpBooster
   powerUpName: Dice Multiplier
-  powerUpDescription: Multiplies your dice roll by 3x! Lasts for three turns.
+  powerUpDescription: Multiplies your dice roll by 3x! Lasts three turns.
   icon: {fileID: 21300000, guid: 172d7236de28da84faa589b59c243301, type: 3}
-  bannerColor: {r: 0.19157171, g: 0.990566, b: 0.31718418, a: 1}
+  bannerColor: {r: 0.8207547, g: 0.58735716, b: 0.15873085, a: 1}
