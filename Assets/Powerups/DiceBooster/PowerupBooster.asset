@@ -9,10 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: afb5aeec9600a524888adfe322ecfd6d, type: 3}
   m_Name: PowerupBooster
-  m_EditorClassIdentifier: Assembly-CSharp::PowerUpBooster
+  m_EditorClassIdentifier: 
   powerUpName: Dice Multiplier
   powerUpDescription: Multiplies your dice roll by 3x! Lasts three turns.
   icon: {fileID: 21300000, guid: 172d7236de28da84faa589b59c243301, type: 3}
-  bannerColor: {r: 0.8207547, g: 0.58735716, b: 0.15873085, a: 1}
+  bannerColor: {r: 0, g: 0.73333335, b: 1, a: 1}

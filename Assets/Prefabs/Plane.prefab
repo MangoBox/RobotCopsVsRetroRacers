@@ -45,6 +45,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   squareType: 0
+  squareMaterial: {fileID: 0}
+  occupiedCar: {fileID: 0}
 --- !u!1 &2541416017348457368
 GameObject:
   m_ObjectHideFlags: 0

@@ -9,7 +9,8 @@ public class Square : MonoBehaviour
         BUILDING,
         POLICE_BUILDING,
         BANK,
-        ABILITY_ITEM
+        ABILITY_ITEM,
+        HIGHWAY_EXIT
     }
 
     public GridCoord coord;

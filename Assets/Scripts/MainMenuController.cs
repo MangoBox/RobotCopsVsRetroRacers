@@ -20,6 +20,12 @@ public class MainMenuController : MonoBehaviour
     }
 
     public void PlayGame() {
+        if(GameController.gc != null)
+            GameController.gc.ResetStaticVariables();
         SceneManager.LoadScene("MainScene");
+    }
+    
+    public void OpenManual() {
+        Application.OpenURL("https://docs.google.com/document/d/1QLTqPDLJCCS7BAhdKmldkpMajT-T-8DQiqcKpP3gJV8/edit?usp=sharing");
     }
 }

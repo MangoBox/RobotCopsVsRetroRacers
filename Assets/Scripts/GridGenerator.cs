@@ -5,6 +5,10 @@ using UnityEngine;
 public class GridGenerator : MonoBehaviour
 {
     public GridPrefab[] gridPrefabs;
+
+    public GridPrefab highwayEntry;
+    public GridPrefab highwayExit;
+
     public int dimensionsX;
     public int dimensionsY;
 
@@ -14,6 +18,12 @@ public class GridGenerator : MonoBehaviour
 
 
     public Square[,] GenerateGrid() {
+        dimensionsX = 10 + GameController.cityLevel * 4;
+        dimensionsY = 10 + GameController.cityLevel * 4;
+
+        minRowSkips = (int)(dimensionsX * 0.25f);
+        maxRowSkips = (int)(dimensionsX * 0.5f);
+
         //Provide a small X & Y offset to compensate for the centre of a square.
         float offsetX = (dimensionsX * gridSpacing) / 2;
         float offsetY = (dimensionsY * gridSpacing) / 2;
@@ -31,13 +41,26 @@ public class GridGenerator : MonoBehaviour
                 //Check if the current grid square is meant to be a skip. If it is, it's a blank square.
                 if(xSkips.Contains(x) || ySkips.Contains(y)) {
                     chosenPrefab = gridPrefabs[0].prefab;
+                    //Generate highway entry points
+                    if(Mathf.FloorToInt((dimensionsY)/2) == y) {
+                        if(x == 0) {
+                            chosenPrefab = highwayEntry.prefab;
+                        }
+                        if(x == dimensionsX - 1) {
+                            chosenPrefab = highwayExit.prefab;
+                        }
+                    }
                 }
                 //Spawn the grid block.
                 GameObject spawnedGrid = Instantiate(chosenPrefab);
+
                 //Move the grid block into the correct 3D position (in accordance with offsetting and spacing)
                 spawnedGrid.transform.position = new Vector3(x * gridSpacing - offsetX, 0, y*gridSpacing - offsetY);
                 //Assign the square object in the grid so we can use it later.
                 Square squareObj = spawnedGrid.GetComponent<Square>();
+                if(squareObj.squareType == Square.SquareType.ABILITY_ITEM) {
+                    squareObj.GetComponentInChildren<Animator>().Play("Bounce",0,Random.Range(0f,1f));
+                }
                 grid[x,y] = squareObj;
                 squareObj.coord = new GridCoord(x,y);
                 //Set the square material.

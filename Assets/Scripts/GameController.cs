@@ -20,10 +20,9 @@ public class GameController : MonoBehaviour
     public Car playerCar;
     public GameObject copCarPrefab;
     private List<Car> copCars;
-    public int copsNumber;
 
     [HideInInspector]
-    public int remaining3xMove = 0;
+    public int remaining3xMove;
 
     [HideInInspector]
     public int remainingEscapeCards = 0;
@@ -40,10 +39,11 @@ public class GameController : MonoBehaviour
     public static GameController gc;
 
     public UIController uiController;
+    public CityNameGenerator cityNameGenerator;
 
-    public int score = 0;
+    public static int score = 0;
 
-    public int scoreMultiplier = 1;
+    public static int scoreMultiplier = 1;
 
     [Header("Aesthetics")]
     public Color highlightedSquareColor;
@@ -52,6 +52,10 @@ public class GameController : MonoBehaviour
     public Color dangerColor;
 
     public Color bankColor;
+
+    private string cityName;
+
+    public static int cityLevel = 1;
 
     public List<Square> ActivatedBanks;
 
@@ -107,6 +111,12 @@ public class GameController : MonoBehaviour
         }
     }
 
+    public void ResetStaticVariables() {
+        score = 0;
+        scoreMultiplier = 1;
+        cityLevel = 1;
+    }
+
     public enum GameState {
         TURN,
         WAITING,
@@ -120,9 +130,12 @@ public class GameController : MonoBehaviour
         grid = gridGenerator.GenerateGrid();
         GenerateCops();
         PlayerTurn();
-        MoveToSquare(playerCar,gridGenerator.GetSquare(new GridCoord(0,0)));
+        MoveToSquare(playerCar,gridGenerator.GetSquare(new GridCoord(0,Mathf.FloorToInt((gridGenerator.dimensionsY)/2))));
         ActivatedBanks.Clear();
-
+        cityName = cityNameGenerator.GetRandomCityName();
+        uiController.UpdateCityName(cityLevel, cityName);
+        uiController.UpdateCityIntro(cityLevel, cityName, GetDifficultyLevel(cityLevel));
+        
     }
 
     public List<Car> GetAllCars() {
@@ -138,7 +151,7 @@ public class GameController : MonoBehaviour
 
     void GenerateCops() {
         copCars = new List<Car>();
-        for(int i = 0; i < copsNumber; i++) {
+        for(int i = 0; i < GetCopCount(cityLevel); i++) {
             SpawnCop();
         }
     }
@@ -150,13 +163,14 @@ public class GameController : MonoBehaviour
         bool found = false;
         do {
             GridCoord gridCoord = new GridCoord(Random.Range(0,gridGenerator.dimensionsX),Random.Range(0,gridGenerator.dimensionsY));
-            if(gridGenerator.GetSquare(gridCoord).squareType == Square.SquareType.ROAD && gridCoord.x != 0 && gridCoord.y != 0) {
+            if(gridGenerator.GetSquare(gridCoord).squareType == Square.SquareType.ROAD && gridCoord.x != 0 && gridCoord.y != Mathf.FloorToInt((gridGenerator.dimensionsY)/2)) {
                 MoveToSquare(copCar, gridGenerator.GetSquare(gridCoord));
                 found = true;
                 continue;
             }
         } while (!found);
         copCars.Add(copCar);
+        uiController.SetCopAmount(copCars.Count);
         return copCar;
     }
 
@@ -168,6 +182,7 @@ public class GameController : MonoBehaviour
         AddScoreMultiplier(1);
         AddScore(10000);
         ActivatedBanks.Add(s);
+        HighlightAvailableSquares(playerCar);
         
     }
 
@@ -175,6 +190,7 @@ public class GameController : MonoBehaviour
     public IEnumerator CopTurn() {
         //Notifies the UI Controller to update relevant banner information
         uiController.UpdateTurnUI(false);
+        uiController.DisplayTip();
         //Iterates over the cop cars in the level
         for(int i = 0; i < copCars.Count; i++) {
             //Select the relevant cop car
@@ -224,7 +240,7 @@ public class GameController : MonoBehaviour
                     if(currentClone.x < 0 || currentClone.y < 0 || currentClone.x >= gridGenerator.dimensionsX || currentClone.y >= gridGenerator.dimensionsY)
                         continue;
                     //Check if the grid is occupied by a building
-                    if(gridGenerator.GetSquare(currentClone).squareType == Square.SquareType.BUILDING)
+                    if(gridGenerator.GetSquare(currentClone).squareType != Square.SquareType.ROAD && gridGenerator.GetSquare(currentClone).squareType != Square.SquareType.HIGHWAY_EXIT)
                         continue;
                     //Insert the distance and coordinate into the dictionary
                     distanceDict[distance] = currentClone;
@@ -253,11 +269,8 @@ public class GameController : MonoBehaviour
         return Random.Range(1,7);
     }
 
-    public void ApplyPowerup(Powerup powerup) {
-        
-    }
-
     public void PlayerTurn() {
+        uiController.CloseTip();
         if(CheckIfBusted()) {
             if(remainingEscapeCards > 0) {
                 //Randomly teleport player somewhere!
@@ -273,7 +286,8 @@ public class GameController : MonoBehaviour
                 } while (!found);
 
             } else {
-                uiController.DisplayGameOverScreen();
+                //BUSTED
+                GameOver();
             }
         }
         HighlightAvailableSquares(playerCar);
@@ -297,6 +311,22 @@ public class GameController : MonoBehaviour
         }
         return !ableToMove;
     }
+
+    public void GameOver() {
+        if(score > GetHighScore()) {
+            SetHighScore(score);
+        }
+        uiController.SetGameOverText(score, GetHighScore(), cityName, cityLevel);
+        uiController.DisplayGameOverScreen();
+    }
+
+    public int GetHighScore() {
+        return PlayerPrefs.GetInt("highscore",0);
+    }
+
+    public void SetHighScore(int score) {
+        PlayerPrefs.SetInt("highscore", score);
+    }
     
     public void ClickOnSquare(Square clicked) {
         if(playersTurn == false)
@@ -310,9 +340,27 @@ public class GameController : MonoBehaviour
             uiController.UpdateMoveCount(remainingMoves);
         }
         if(remainingMoves <= 0 && result != 2) {
+            
             playersTurn = false;
             StartCoroutine(CopTurn());
         }
+        if(result == 2) {
+            remainingMoves--;
+        }
+    }
+
+    public void CheckPlayerTurnStatus() {
+        uiController.UpdateMoveCount(remainingMoves);
+        HighlightAvailableSquares(playerCar);
+        if(remainingMoves <= 0) {
+            playersTurn = false;
+            StartCoroutine(CopTurn());
+        }
+    }
+
+    public void Editor_NextLevel() {
+        GridCoord to = new GridCoord(gridGenerator.dimensionsX - 1,Mathf.FloorToInt((gridGenerator.dimensionsY)/2));
+        MoveToSquare(playerCar, gridGenerator.GetSquare(to));
     }
 
     public IEnumerator HandlePowerup() {
@@ -323,9 +371,9 @@ public class GameController : MonoBehaviour
         PowerupUI powerupUI = prefabInst.GetComponent<PowerupUI>();
         powerupUI.ApplyPowerup(pu);
         pu.Activate(this);
-        yield return new WaitForSeconds(4f);
+        yield return new WaitForSeconds(5.5f);
         Destroy(prefabInst);
-        
+        CheckPlayerTurnStatus();
     }
 
     void Update() {
@@ -343,6 +391,12 @@ public class GameController : MonoBehaviour
         
     }
 
+    public void NextLevel() {
+        cityLevel += 1;
+        SceneManager.LoadScene("MainScene");
+        uiController.SetCityOutro();
+    }
+
     public void AddScore(int amount) {
         SetScore(score + (amount * scoreMultiplier));
     }
@@ -350,6 +404,13 @@ public class GameController : MonoBehaviour
     public void SetScore(int amount) {
         score = amount;
         uiController.SetScoreText(score);
+        
+        if(score > GetHighScore()) {
+            //NEW HIGH SCORE
+            SetHighScore(score);
+        }
+        uiController.SetScoreMultiplier(scoreMultiplier);
+        uiController.SetHighScore(GetHighScore());
     }
 
     public void AddScoreMultiplier(int amount) {
@@ -377,6 +438,11 @@ public class GameController : MonoBehaviour
 
         //Spawning cop car when player goes past station.
         if(car == playerCar) {
+            AddScore(scoreMoveAmount);
+
+            if(gridGenerator.GetSquare(playerCar.gridCoord).squareType == Square.SquareType.HIGHWAY_EXIT) {
+                NextLevel();
+            }
             //Iterate over the adjacent squares
             foreach(Square s in GetAdjacentSquares(gridGenerator.GetSquare(car.gridCoord))) {
                 //If its a police building, spawn a new police car
@@ -384,10 +450,10 @@ public class GameController : MonoBehaviour
                     Car newCop = SpawnCop();
                     //Pan camera over and let player know
                     StartCoroutine(NotifyNewCopCar(newCop));
+                    if(gridGenerator.GetSquare(playerCar.gridCoord).squareType != Square.SquareType.ABILITY_ITEM)
+                        return 2;
                 }
             }
-            //Add Score
-            AddScore(scoreMoveAmount);
             //Check if it's an ability item
             if(gridGenerator.GetSquare(playerCar.gridCoord).squareType == Square.SquareType.ABILITY_ITEM) {
                 //Get a reference to the powerup square
@@ -398,12 +464,16 @@ public class GameController : MonoBehaviour
                     StartCoroutine(HandlePowerup());
                     //Mark the powerup as used (Inactive)
                     s.transform.GetChild(1).gameObject.SetActive(false);
+                    s.squareType = Square.SquareType.ROAD;
                     //Wait for the powerup animation to be complete before starting on the cop's turn
                     StartCoroutine(WaitForCopCompletion());
                     //Notify the caller that the class had a powerup status
+                    HighlightAvailableSquares(car);
                     return 2;
                 }             
             }
+
+            
         }
         //Highlight new squares for the player.
         HighlightAvailableSquares(car);
@@ -415,7 +485,19 @@ public class GameController : MonoBehaviour
         yield return new WaitForSeconds(4f);
         CopTurn();
     }
+
+    public int GetDifficultyLevel(int cityLevel) {
+        if(cityLevel<=10) {
+            return Mathf.FloorToInt(0.5f * (cityLevel - 1));
+        } else {
+            return 4;
+        }
+    }
     
+    public int GetCopCount(int cityLevel) {
+        return GetDifficultyLevel(cityLevel)*3 + 2;
+    }
+
     public List<Square> GetAdjacentSquares(Square square) {
         List<Square> adajacentSquares = new List<Square>();
         for(int x = 0; x < gridGenerator.dimensionsX; x++) {
@@ -459,18 +541,19 @@ public class GameController : MonoBehaviour
     }
 
     public IEnumerator NotifyNewCopCar(Car target) {
-        uiController.UpdateBanner("New Cop Car Deployed", "You passed by a police station!", new Color(255,0,0));
+        uiController.UpdateBanner("New Cop Car Deployed", new Color(255,0,0));
         cameraController.currentTargetCar = target;
         yield return new WaitForSeconds(3f);
         cameraController.currentTargetCar = playerCar;
         uiController.UpdateTurnUI(true);
         yield return new WaitForSeconds(0.3f);
+        CheckPlayerTurnStatus();
     }
 
 
 
     public bool CanMoveTo(Car car, Square square, bool ignoreDistance = false) {
-        if(square.squareType != Square.SquareType.ROAD && square.squareType != Square.SquareType.ABILITY_ITEM)
+        if(square.squareType != Square.SquareType.ROAD && square.squareType != Square.SquareType.ABILITY_ITEM && square.squareType != Square.SquareType.HIGHWAY_EXIT)
             return false;
 
         if(square.occupiedCar != null)
