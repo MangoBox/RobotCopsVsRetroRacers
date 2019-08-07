@@ -18,8 +18,8 @@ public class GridGenerator : MonoBehaviour
 
 
     public Square[,] GenerateGrid() {
-        dimensionsX = 10 + GameController.cityLevel * 4;
-        dimensionsY = 10 + GameController.cityLevel * 4;
+        dimensionsX = Mathf.Clamp(10 + GameController.cityLevel * 4,0,21);
+        dimensionsY = Mathf.Clamp(10 + GameController.cityLevel * 4,0,21);
 
         minRowSkips = (int)(dimensionsX * 0.25f);
         maxRowSkips = (int)(dimensionsX * 0.5f);

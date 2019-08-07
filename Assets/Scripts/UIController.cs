@@ -131,7 +131,22 @@ public class UIController : MonoBehaviour
     }
 
     public void SetCopAmount(int amount) {
-        copText.text = "Cops Deployed: " + amount.ToString();
+        string t = copText.text;
+        string[] parts = t.Split('|');
+        parts[1] = " Cops Deployed: " + amount.ToString();
+        copText.text = parts[0] + "|" +parts[1];
+    }
+
+    public void SetBanksRobbed(int amount) {
+        string t = copText.text;
+        string[] parts = t.Split('|');
+        if(amount <= -1) {
+            parts[0] = "[BONUS ACTIVATED] 5 Banks Robbed! ";
+        } else {
+            parts[0] = "Banks Robbed: " + amount.ToString() + "/5 ";
+        }
+        
+        copText.text = parts[0] + "|" +parts[1];
     }
 
     public void DisplayTip() {

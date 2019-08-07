@@ -40,10 +40,13 @@ public class GameController : MonoBehaviour
 
     public UIController uiController;
     public CityNameGenerator cityNameGenerator;
+    public SoundController soundController;
 
     public static int score = 0;
 
     public static int scoreMultiplier = 1;
+
+    public int banksRobbed;
 
     [Header("Aesthetics")]
     public Color highlightedSquareColor;
@@ -126,6 +129,7 @@ public class GameController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        banksRobbed = 0;
         gc = this;
         grid = gridGenerator.GenerateGrid();
         GenerateCops();
@@ -179,11 +183,22 @@ public class GameController : MonoBehaviour
             return;
         Animator bankAnimator = s.GetComponentInChildren<Animator>();
         bankAnimator.SetTrigger("TriggerAlarm");
-        AddScoreMultiplier(1);
-        AddScore(10000);
         ActivatedBanks.Add(s);
         HighlightAvailableSquares(playerCar);
-        
+        banksRobbed++;
+        soundController.PlayBankSound();
+        if(banksRobbed >= 5) {
+            banksRobbed = -9999;
+            AddScoreMultiplier(8);
+            AddScore(30000);
+            uiController.SetBanksRobbed(banksRobbed);
+            remainingMoves += Random.Range(15,21);
+            uiController.UpdateMoveCount(remainingMoves);
+        } else {
+            AddScoreMultiplier(1);
+            AddScore(10000);
+            uiController.SetBanksRobbed(banksRobbed);
+        }
     }
 
 
@@ -252,7 +267,7 @@ public class GameController : MonoBehaviour
                 //Check the dictionary result isn't empty
                 if(lowestDist!=null) {
                     //Finally! Move to the square
-                    MoveToSquare(copCar, gridGenerator.GetSquare(lowestDist));
+                    MoveToSquare(copCar, gridGenerator.GetSquare(lowestDist),true);
                 }
                 //Update the move banner count
                 uiController.UpdateMoveCount(m);
@@ -334,7 +349,7 @@ public class GameController : MonoBehaviour
         //Initial check
         if(remainingMoves <= 0)
             return;
-        int result = MoveToSquare(playerCar, clicked);
+        int result = MoveToSquare(playerCar, clicked, true);
         if(result == 1) {
             remainingMoves--;
             uiController.UpdateMoveCount(remainingMoves);
@@ -364,7 +379,14 @@ public class GameController : MonoBehaviour
     }
 
     public IEnumerator HandlePowerup() {
-        Powerup pu = powerups[Random.Range(0,powerups.Length)];
+        soundController.PlayPowerupSound();
+        Powerup pu = null;
+        int i = 0;
+        do {
+            i = Random.Range(0,powerups.Length);
+            pu = powerups[i];
+        } while (remainingEscapeCards >= 1 && i == 1);
+        
         GameObject prefabInst = Instantiate(powerupUIPrefab);
         prefabInst.transform.SetParent(uiController.canvas.transform,false);
         RectTransform rectTransform = prefabInst.GetComponent<RectTransform>();
@@ -388,11 +410,16 @@ public class GameController : MonoBehaviour
             }
             animatingCars.RemoveAll(x => toRemove.Contains(x));
         }
+
+        if(Input.GetKeyDown(KeyCode.Escape)) {
+            SceneManager.LoadScene("MainMenu");
+        }
         
     }
 
     public void NextLevel() {
         cityLevel += 1;
+        AddScore(8000);
         SceneManager.LoadScene("MainScene");
         uiController.SetCityOutro();
     }
@@ -423,7 +450,7 @@ public class GameController : MonoBehaviour
     }
     
 
-    public int MoveToSquare(Car car, Square square) {
+    public int MoveToSquare(Car car, Square square, bool playSound = false) {
         //Checks if the car can move to the position
         if(!CanMoveTo(car, square,true))
             return 0;
@@ -435,6 +462,9 @@ public class GameController : MonoBehaviour
         //Start car animating
         AnimatingCar aC = new AnimatingCar(car, car.transform.position, square.transform.position, 0.2f);
         animatingCars.Add(aC);
+
+        if(playSound)
+            soundController.PlayMoveSound();
 
         //Spawning cop car when player goes past station.
         if(car == playerCar) {
@@ -448,6 +478,7 @@ public class GameController : MonoBehaviour
                 //If its a police building, spawn a new police car
                 if(s.squareType == Square.SquareType.POLICE_BUILDING) {
                     Car newCop = SpawnCop();
+                    soundController.PlayPoliceSound();
                     //Pan camera over and let player know
                     StartCoroutine(NotifyNewCopCar(newCop));
                     if(gridGenerator.GetSquare(playerCar.gridCoord).squareType != Square.SquareType.ABILITY_ITEM)
@@ -541,6 +572,7 @@ public class GameController : MonoBehaviour
     }
 
     public IEnumerator NotifyNewCopCar(Car target) {
+        AddScore(4000);
         uiController.UpdateBanner("New Cop Car Deployed", new Color(255,0,0));
         cameraController.currentTargetCar = target;
         yield return new WaitForSeconds(3f);
