@@ -115,7 +115,7 @@ public class GameController : MonoBehaviour
     }
 
     public void ResetStaticVariables() {
-        score = 0;
+        score = -1000;
         scoreMultiplier = 1;
         cityLevel = 1;
     }
@@ -168,8 +168,11 @@ public class GameController : MonoBehaviour
         do {
             GridCoord gridCoord = new GridCoord(Random.Range(0,gridGenerator.dimensionsX),Random.Range(0,gridGenerator.dimensionsY));
             if(gridGenerator.GetSquare(gridCoord).squareType == Square.SquareType.ROAD && gridCoord.x != 0 && gridCoord.y != Mathf.FloorToInt((gridGenerator.dimensionsY)/2)) {
-                MoveToSquare(copCar, gridGenerator.GetSquare(gridCoord));
-                found = true;
+                Square s = gridGenerator.GetSquare(gridCoord);
+                if(CanMoveTo(copCar,s,true)) {
+                    MoveToSquare(copCar, gridGenerator.GetSquare(gridCoord));
+                    found = true;
+                }
                 continue;
             }
         } while (!found);
@@ -266,8 +269,11 @@ public class GameController : MonoBehaviour
                 GridCoord lowestDist = result.FirstOrDefault().Value;
                 //Check the dictionary result isn't empty
                 if(lowestDist!=null) {
+                    Square s = gridGenerator.GetSquare(lowestDist);
                     //Finally! Move to the square
-                    MoveToSquare(copCar, gridGenerator.GetSquare(lowestDist),true);
+                    if(CanMoveTo(copCar, s)) {
+                        MoveToSquare(copCar, s);
+                    }
                 }
                 //Update the move banner count
                 uiController.UpdateMoveCount(m);
@@ -294,7 +300,7 @@ public class GameController : MonoBehaviour
                 do {
                     GridCoord gridCoord = new GridCoord(Random.Range(0,2)*(gridGenerator.dimensionsX-1),Random.Range(0,2)*(gridGenerator.dimensionsY-1));
                     if(gridGenerator.GetSquare(gridCoord).squareType == Square.SquareType.ROAD && CanMoveTo(playerCar, gridGenerator.GetSquare(gridCoord), true)) {
-                        MoveToSquare(playerCar, gridGenerator.GetSquare(gridCoord));
+                        MoveToSquareChecked(playerCar, gridGenerator.GetSquare(gridCoord));
                         found = true;
                         continue;
                     }
@@ -349,25 +355,22 @@ public class GameController : MonoBehaviour
         //Initial check
         if(remainingMoves <= 0)
             return;
+        if(!CanMoveTo(playerCar,clicked))
+            return;
+        remainingMoves--;
+        uiController.UpdateMoveCount(remainingMoves);
         int result = MoveToSquare(playerCar, clicked, true);
-        if(result == 1) {
-            remainingMoves--;
-            uiController.UpdateMoveCount(remainingMoves);
-        }
+
         if(remainingMoves <= 0 && result != 2) {
-            
             playersTurn = false;
             StartCoroutine(CopTurn());
-        }
-        if(result == 2) {
-            remainingMoves--;
         }
     }
 
     public void CheckPlayerTurnStatus() {
         uiController.UpdateMoveCount(remainingMoves);
         HighlightAvailableSquares(playerCar);
-        if(remainingMoves <= 0) {
+        if(remainingMoves <= 0 && playersTurn) {
             playersTurn = false;
             StartCoroutine(CopTurn());
         }
@@ -375,7 +378,7 @@ public class GameController : MonoBehaviour
 
     public void Editor_NextLevel() {
         GridCoord to = new GridCoord(gridGenerator.dimensionsX - 1,Mathf.FloorToInt((gridGenerator.dimensionsY)/2));
-        MoveToSquare(playerCar, gridGenerator.GetSquare(to));
+        MoveToSquareChecked(playerCar, gridGenerator.GetSquare(to));
     }
 
     public IEnumerator HandlePowerup() {
@@ -412,6 +415,7 @@ public class GameController : MonoBehaviour
         }
 
         if(Input.GetKeyDown(KeyCode.Escape)) {
+            ResetStaticVariables();
             SceneManager.LoadScene("MainMenu");
         }
         
@@ -449,11 +453,14 @@ public class GameController : MonoBehaviour
         uiController.SetScoreMultiplier(scoreMultiplier);
     }
     
+    public int MoveToSquareChecked(Car car, Square square, bool ignoreDistance = false) {
+        if(!CanMoveTo(car, square)) {
+            return 0;
+        }
+        return MoveToSquare(car, square, ignoreDistance);
+    }
 
     public int MoveToSquare(Car car, Square square, bool playSound = false) {
-        //Checks if the car can move to the position
-        if(!CanMoveTo(car, square,true))
-            return 0;
         //Notifies the formerly-occupied square of it's vacancy
         gridGenerator.GetSquare(car.gridCoord).occupiedCar = null;
         //Notifies the new square of the new car

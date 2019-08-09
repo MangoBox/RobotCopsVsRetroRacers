@@ -80,6 +80,7 @@ public class UIController : MonoBehaviour
     }
 
     public void MainMenuButton() {
+        GameController.gc.ResetStaticVariables();
         SceneManager.LoadScene("MainMenu");
     }
 
